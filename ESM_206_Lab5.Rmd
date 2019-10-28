@@ -53,4 +53,96 @@ ggplot(data= lobster_tidy, aes(sample = size_mm))+
   geom_qq(size = 0.7)+
   facet_wrap(~site, scales = "free")
 ```
+convert data
+```{r}
+lobster_data <- lobster_tidy %>% 
+  mutate(date_new = lubridate::mdy(date))
+```
+
+parse date column to get column that has month in it. and the column already is treated as a factor w/ assigned order!
+
+```{r}
+lobster_parse_date <- lobster_data %>% 
+  mutate(obs_month = lubridate::month(date_new, label = TRUE)) %>% 
+  mutate(obs_year = lubridate::year(date_new))
+```
+count lobsters by different groupings
+
+counting number of lobsters by yr and month
+
+```{r}
+lobster_ym <- lobster_parse_date %>% 
+  count(obs_year, obs_month)
+```
+counting number of lobsters by sites
+
+```{r}
+lobster_ysite <- lobster_parse_date %>% 
+  count(obs_year, site)
+```
+over all obs, how many lobsters at each site
+
+```{r}
+lobster_site_only <- lobster_parse_date %>% 
+  count(site)
+```
+
+stick it all in 1 table
+
+```{r}
+lobster_summary <- lobster_parse_date %>% 
+  group_by(site) %>% 
+  summarize(
+    mean_size = mean(size_mm, na.rm = TRUE),
+    sd_size = sd(size_mm, na.rm = TRUE),
+    sample_n = n()
+  )
+```
+
+Confidence Intervals and t-tests
+use ttest fxn to find confidence intervals and perform ttests
+
+```{r}
+ivee_lobsters <- lobster_tidy %>% 
+  filter(site == "IVEE") %>% 
+  pull(size_mm)  #store a vector of values
+
+t.test(ivee_lobsters) #one vector, so one sample t-test (is there anough evidence that the actual value is different from zero)
+```
+
+2 sample t-test!
+Is there a sig dif btw mean lobs lengths btw naples reef and mohawk reef?
+
+```{r}
+napl_sample <- lobster_tidy %>% 
+  filter(site == "NAPL") %>% 
+  pull(size_mm)
+
+mohk_sample <- lobster_tidy %>% 
+  filter(site == "MOHK") %>% 
+  pull(size_mm)
+
+mohk_napl_ttest <- t.test(napl_sample,mohk_sample)
+
+mohk_napl_ttest
+```
+
+(in help documentation, the value section refers to all the outputs of a fxn. use them to call/reference them!)
+
+mean lobster size differed significatly btw Mohawk and Naples reefs(t(`r mohk_napl_ttest$parameter`) = `r mohk_napl_ttest$statistic`)
+
+```{r}
+lobster_2sample <- lobster_tidy %>% 
+  filter(site %in% c("NAPL","MOHK"))
+
+ttest_2 <- t.test(size_mm ~ site, data = lobster_2sample)
+ttest_2
+```
+
+make a heat map!
+
+```{r}
+ggplot(data = lobster_ysite, aes(x = obs_year, y = site)) +
+  geom_tile(aes(fill = n))
+```
 
