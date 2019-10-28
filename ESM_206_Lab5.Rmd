@@ -9,3 +9,48 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+Objectives:
+- count data!
+- use lubridate package to parse dates
+- find confidence intervals and do T tests w/ t.test()
+- Make 1st heatmap w/ geom_tile()
+
+```{r, include = FALSE}
+library(tidyverse)
+library(here)
+library(janitor)
+```
+
+```{r}
+# import lobster data from subfolder
+lobster_ab <- read_csv(here("data","lobster_abundance.csv"), 
+  na = "-99999") %>% 
+  clean_names()
+```
+
+(in tidyverse, every observation has its own role (every lobster). Currently it's in frequency format, and we need case format.)
+```{r}
+lobster_tidy <- lobster_ab %>% 
+  uncount(lobster_count)
+```
+now each lobster has its own row, now it's in tidy format!
+time to look at data
+```{r}
+ggplot(data = lobster_tidy, aes(x = site, y = size_mm)) + 
+  geom_jitter(aes(color = site),
+              width = 0.2,
+              alpha = 0.4)
+
+ggplot(data = lobster_tidy, aes(x = site, y = size_mm)) + 
+  geom_violin(aes(color = site),
+              alpha = 0.4)
+
+ggplot(data= lobster_tidy, aes(x = size_mm))+
+  geom_histogram(aes(fill = site))+
+  facet_wrap(~site, scales = "free") #since we wanna see norm dist, change the scales, but usually don't do this if you're comparing ACROSS groups
+
+ggplot(data= lobster_tidy, aes(sample = size_mm))+
+  geom_qq(size = 0.7)+
+  facet_wrap(~site, scales = "free")
+```
+
